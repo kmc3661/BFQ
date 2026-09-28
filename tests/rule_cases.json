@@ -1,0 +1,193 @@
+[
+  {
+    "id": "internvl2_coco64_w3a16",
+    "quant_mode": "w3a16",
+    "statistics": {
+      "baseline_loss": 1.1580600714629086,
+      "beneficial_ratio": 0.20699458358498954,
+      "harmful_ratio": 0.06507958780479688,
+      "layers_for_90_weight": 15,
+      "mean_conflict": 0,
+      "support90_frac_weight": 0.46875,
+      "top10_share_weight": 0.37533061927148087,
+      "top1_share_weight": 0.1905906723424727,
+      "top3_share_weight": 0.37533061927148087,
+      "total_beneficial_all": 0.01967246173693149,
+      "total_beneficial_mode": 0.01967246173693149,
+      "total_harmful_all": 0.0753660721039997,
+      "total_harmful_mode": 0.0753660721039997,
+      "total_harmful_text": 0,
+      "total_harmful_vision": 0,
+      "total_harmful_weight": 0.0753660721039997
+    },
+    "expected": [
+      18,
+      23,
+      2.1
+    ]
+  },
+  {
+    "id": "internvl2_coco64_w4a8",
+    "quant_mode": "w4a8",
+    "statistics": {
+      "activation_share": 0.4660037518556335,
+      "baseline_loss": 1.1580600714629086,
+      "beneficial_ratio": 0.3214448976176478,
+      "harmful_ratio": 0.038156567694751134,
+      "layers_for_90_total": 21,
+      "mean_conflict": 0.0006662297374079804,
+      "support90_frac_total": 0.65625,
+      "text_share": 0.30303548893369375,
+      "top10_share_total": 0.3708552926096453,
+      "top1_share_total": 0.15652049151177203,
+      "top3_share_total": 0.31893355075903096,
+      "total_beneficial_all": 0.020932534009605375,
+      "total_beneficial_mode": 0.020932534009605375,
+      "total_harmful_all": 0.04418759751136281,
+      "total_harmful_mode": 0.04418759751136281,
+      "total_harmful_text": 0.013390410216661097,
+      "total_harmful_vision": 0.0072011760091206245,
+      "total_harmful_weight": 0.023596011285581087,
+      "vision_share": 0.16296826292193975,
+      "weight_share": 0.5339962481443665
+    },
+    "expected": [
+      17,
+      21,
+      1.65
+    ]
+  },
+  {
+    "id": "llavaov_coco64_w3a16",
+    "quant_mode": "w3a16",
+    "statistics": {
+      "baseline_loss": 0.774782007812336,
+      "beneficial_ratio": 0.016691189644144535,
+      "harmful_ratio": 1.3710523343192316,
+      "layers_for_90_weight": 2,
+      "mean_conflict": 0,
+      "support90_frac_weight": 0.07142857142857142,
+      "top10_share_weight": 0.9154848482148373,
+      "top1_share_weight": 0.8929347997753694,
+      "top3_share_weight": 0.9154848482148373,
+      "total_beneficial_all": 0.01803146115286991,
+      "total_beneficial_mode": 0.01803146115286991,
+      "total_harmful_all": 1.0622666803996443,
+      "total_harmful_mode": 1.0622666803996443,
+      "total_harmful_text": 0,
+      "total_harmful_vision": 0,
+      "total_harmful_weight": 1.0622666803996443
+    },
+    "expected": [
+      20,
+      27,
+      2.55
+    ]
+  },
+  {
+    "id": "llavaov_coco64_w4a8",
+    "quant_mode": "w4a8",
+    "statistics": {
+      "activation_share": 0.25352555891639883,
+      "baseline_loss": 0.774782007812336,
+      "beneficial_ratio": 0.29893840034316904,
+      "harmful_ratio": 0.1069798056229205,
+      "layers_for_90_total": 15,
+      "mean_conflict": 0.0016534547373738635,
+      "support90_frac_total": 0.5357142857142857,
+      "text_share": 0.23633369113203953,
+      "top10_share_total": 0.4699195958474988,
+      "top1_share_total": 0.22607643532528737,
+      "top3_share_total": 0.4699195958474988,
+      "total_beneficial_all": 0.03534328054964808,
+      "total_beneficial_mode": 0.03534328054964808,
+      "total_harmful_all": 0.08288602859589977,
+      "total_harmful_mode": 0.08288602859589977,
+      "total_harmful_text": 0.019588761081344774,
+      "total_harmful_vision": 0.0014249656447913317,
+      "total_harmful_weight": 0.06187230186976367,
+      "vision_share": 0.017191867784359285,
+      "weight_share": 0.7464744410836012
+    },
+    "expected": [
+      15,
+      18,
+      1.8
+    ]
+  },
+  {
+    "id": "qwen2_coco64_w3a16",
+    "quant_mode": "w3a16",
+    "statistics": {
+      "baseline_loss": 0.9432580831791719,
+      "beneficial_ratio": 0.042969994807271046,
+      "harmful_ratio": 0.5331184964578467,
+      "layers_for_90_weight": 8,
+      "mean_conflict": 0,
+      "support90_frac_weight": 0.2857142857142857,
+      "top10_share_weight": 0.813119692045173,
+      "top1_share_weight": 0.7586033224121885,
+      "top3_share_weight": 0.813119692045173,
+      "total_beneficial_all": 0.022578445250244217,
+      "total_beneficial_mode": 0.022578445250244217,
+      "total_harmful_all": 0.5028683310761907,
+      "total_harmful_mode": 0.5028683310761907,
+      "total_harmful_text": 0,
+      "total_harmful_vision": 0,
+      "total_harmful_weight": 0.5028683310761907
+    },
+    "expected": [
+      20,
+      22,
+      2.5
+    ]
+  },
+  {
+    "id": "qwen2_coco64_w4a8",
+    "quant_mode": "w4a8",
+    "statistics": {
+      "activation_share": 0.2791383775549182,
+      "baseline_loss": 0.9432580831791719,
+      "beneficial_ratio": 0.3368359588445712,
+      "harmful_ratio": 0.098813404466619,
+      "layers_for_90_total": 17,
+      "mean_conflict": 0.0017149304036559812,
+      "support90_frac_total": 0.6071428571428571,
+      "text_share": 0.24890179354012087,
+      "top10_share_total": 0.3664536040483336,
+      "top1_share_total": 0.1545402874434381,
+      "top3_share_total": 0.3664536040483336,
+      "total_beneficial_all": 0.04734170305037766,
+      "total_beneficial_mode": 0.04734170305037766,
+      "total_harmful_all": 0.09320654248959126,
+      "total_harmful_mode": 0.09320654248959126,
+      "total_harmful_text": 0.023199275595332747,
+      "total_harmful_vision": 0.0028182474527153056,
+      "total_harmful_weight": 0.06718901944154321,
+      "vision_share": 0.030236584014797355,
+      "weight_share": 0.7208616224450818
+    },
+    "expected": [
+      16,
+      19,
+      1.7
+    ]
+  },
+  {
+    "id": "internvl2_26b_coco64_w4a8",
+    "quant_mode": "w4a8",
+    "statistics": {
+      "activation_share": 0.7104447209,
+      "support90_frac_total": 0.3958333333,
+      "top10_share_total": 0.5234279091,
+      "harmful_ratio": 0.0286893182,
+      "beneficial_ratio": 0.7029898976,
+      "baseline_loss": 1.1349248391
+    },
+    "expected": [
+      14,
+      21,
+      1.8
+    ]
+  }
+]

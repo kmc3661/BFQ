@@ -1,0 +1,1 @@
+# QIG method package
