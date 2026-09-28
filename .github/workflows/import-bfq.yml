@@ -1,0 +1,22 @@
+name: Import BFQ source
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/import-bfq.yml]
+permissions:
+  contents: write
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Expand reviewed source archive
+        run: |
+          unzip -q bfq_github_upload.zip
+          rm bfq_github_upload.zip .github/workflows/import-bfq.yml
+          rmdir .github/workflows .github
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Publish BFQ source code"
+          git push
