@@ -1,0 +1,30 @@
+name: Normalize BFQ release history
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/normalize-history.yml]
+permissions:
+  contents: write
+jobs:
+  normalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Preserve import history and publish clean release
+        env:
+          GIT_AUTHOR_NAME: Minchan Kang
+          GIT_AUTHOR_EMAIL: 67529114+kmc3661@users.noreply.github.com
+          GIT_COMMITTER_NAME: Minchan Kang
+          GIT_COMMITTER_EMAIL: 67529114+kmc3661@users.noreply.github.com
+        run: |
+          set -euo pipefail
+          original=$(git rev-parse HEAD)
+          git push origin "$original:refs/heads/import-history"
+          git checkout --orphan clean-main
+          rm .github/workflows/normalize-history.yml
+          rmdir .github/workflows .github
+          git add -A
+          git commit -m "Initial BFQ code release"
+          git push --force-with-lease=refs/heads/main:"$original" origin HEAD:main
