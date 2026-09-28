@@ -1,6 +1,6 @@
-# BFQ: Balanced Fitting Quantization for Large Vision-Language Models
+# Beyond Reconstruction Loss in Post-Training Quantization: Balanced Fitting for Large Vision-Language Models
 
-This repository contains the open-source release of **BFQ**, a post-training quantization method for large vision-language models that allocates channel-wise equalization budgets using **calibration-set quantization effects**.
+This repository contains the official code for **Beyond Reconstruction Loss in Post-Training Quantization: Balanced Fitting for Large Vision-Language Models**. The method, **BFQ**, allocates channel-wise equalization budgets using **calibration-set quantization effects**.
 
 **TL;DR.** BFQ measures layer- and component-wise quantization effects on the calibration set, automatically applies a quantization effect-guided allocation rule, and then runs reconstruction-based calibration with adaptive per-layer search budgets.
 
