@@ -817,7 +817,7 @@ def run_mbq(
     lagq_text_attn_correction="exposure_baseline_ratio",
     lagq_vision_query_source="both",
     lagq_query_mix_alpha=0.5,
-    glmi_policy=None,
+    bfq_policy=None,
     desc="Running MBQ...",
     blocks=None,  # optional list of (start,end) layer indices to process; default is all
     timing_log=None,
@@ -1138,8 +1138,8 @@ def run_mbq(
     if finegrained and reweight:
         print("[MBQ][warn] finegrained_qig and reweight are both enabled; disabling reweight for Xiang-style token weighting.")
         reweight = False
-    elif glmi_policy is not None:
-        print("[GLMI] skip MBQ gradient-based reweight stage; using quantization-effect policy instead.")
+    elif bfq_policy is not None:
+        print("[BFQ] skip MBQ gradient-based reweight stage; using quantization-effect policy instead.")
 
     if finegrained and finegrained_mode not in ("qig", "attention"):
         print(f"[MBQ][warn] Unknown finegrained_mode={finegrained_mode}; fallback to qig")
@@ -1607,24 +1607,24 @@ def run_mbq(
                         denom = layer_token_weight.sum(dim=1, keepdim=True)
                     layer_token_weight = layer_token_weight / (denom + qig_eps)
 
-        layer_glmi_policy = None
-        if isinstance(glmi_policy, dict):
-            layer_glmi_policy = glmi_policy.get("layers", {}).get(str(i))
+        layer_bfq_policy = None
+        if isinstance(bfq_policy, dict):
+            layer_bfq_policy = bfq_policy.get("layers", {}).get(str(i))
 
         search_cfg = None
-        if layer_glmi_policy is not None:
-            branch_policy = layer_glmi_policy.get("search_policy")
+        if layer_bfq_policy is not None:
+            branch_policy = layer_bfq_policy.get("search_policy")
             if not isinstance(branch_policy, dict):
-                branch_policy = layer_glmi_policy.get("activation_policy" if wa_quant else "weight_policy", {})
+                branch_policy = layer_bfq_policy.get("activation_policy" if wa_quant else "weight_policy", {})
             if not isinstance(branch_policy, dict):
                 branch_policy = {}
             scale_reweight_ratio_dict = {
-                "attn": float(layer_glmi_policy.get("reweight_ratio", 1.0)),
-                "mlp": float(layer_glmi_policy.get("reweight_ratio", 1.0)),
+                "attn": float(layer_bfq_policy.get("reweight_ratio", 1.0)),
+                "mlp": float(layer_bfq_policy.get("reweight_ratio", 1.0)),
             }
             search_cfg = {
-                "n_grid": int(branch_policy.get("n_grid", layer_glmi_policy.get("n_grid", 20))),
-                "ratio_max": float(branch_policy.get("ratio_max", layer_glmi_policy.get("ratio_max", 1.0))),
+                "n_grid": int(branch_policy.get("n_grid", layer_bfq_policy.get("n_grid", 20))),
+                "ratio_max": float(branch_policy.get("ratio_max", layer_bfq_policy.get("ratio_max", 1.0))),
             }
         elif reweight:
             scale_reweight_ratio_dict = {}
@@ -1644,7 +1644,7 @@ def run_mbq(
         if (
             auto_scale
         ):  # if it applies, we should also modify the input_feat with scales
-            if not reweight and layer_glmi_policy is None:
+            if not reweight and layer_bfq_policy is None:
                 ans_mask = None
                 vis_mask = None
             else:
