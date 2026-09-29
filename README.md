@@ -1,4 +1,4 @@
-# Beyond Reconstruction Loss in Post-Training Quantization: Balanced Fitting for Large Vision-Language Models
+# Beyond Reconstruction Loss in Post-Training Quantization: Balanced Fitting for Large Vision-Language Models ([Paper](https://arxiv.org/abs/2609.34765))
 
 This repository contains the official code for **Beyond Reconstruction Loss in Post-Training Quantization: Balanced Fitting for Large Vision-Language Models**. The method, **BFQ**, allocates channel-wise equalization budgets using **calibration-set quantization effects**.
 
