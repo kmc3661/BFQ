@@ -20,6 +20,7 @@ def get_multimodal_calib_dataset(
     interleave_format=False,
     text_data_path=None,
     shuffle=True, 
+    require_exact_n_samples=False,
 ):
     if data_path.endswith(".jsonl"):
         dataset = []
@@ -31,6 +32,9 @@ def get_multimodal_calib_dataset(
             dataset = json.load(json_file)
     else:
         raise ValueError(f"Unsupported file type: {data_path}")
+
+    if require_exact_n_samples and len(dataset) != n_samples:
+        raise ValueError(f"Ordered calibration manifest has {len(dataset)} records, expected {n_samples}")
     
     if shuffle:
         rng = np.random.default_rng(seed=42)
@@ -96,5 +100,4 @@ def get_multimodal_calib_dataset(
 
     return prompt_inputs, prompt_kwargs 
     
-
 
