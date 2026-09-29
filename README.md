@@ -1,36 +1,16 @@
 # Beyond Reconstruction Loss in Post-Training Quantization: Balanced Fitting for Large Vision-Language Models ([Paper](https://arxiv.org/abs/2609.34765))
 
-This repository contains the official code for **Beyond Reconstruction Loss in Post-Training Quantization: Balanced Fitting for Large Vision-Language Models**. The method, **BFQ**, allocates channel-wise equalization budgets using **calibration-set quantization effects**.
+BFQ is a post-training quantization method for large vision-language models. It measures the effect of quantizing each layer/component on calibration loss and uses those measurements to allocate the search budget for channel-wise equalization (CWE).
 
-**TL;DR.** BFQ measures layer- and component-wise quantization effects on the calibration set, automatically applies a quantization effect-guided allocation rule, and then runs reconstruction-based calibration with adaptive per-layer search budgets.
-
-## Highlights
-
-- Supports `internvl2`, `llava_onevision`, and `qwen2_vl`
-- Supports both `W3A16` and `W4A8`
-- Public BFQ calibration wrappers automatically apply the quantization effect-guided allocation rule
-- Uses the provided **calibration data** for both quantization-effect analysis and scale search
-- Supports evaluation through `lmms-eval` with per-sample logging
+This repository supports InternVL2, LLaVA-OneVision, and Qwen2-VL under W3A16 and W4A8.
 
 ## Installation
 
-1. Clone the repository.
-
-```bash
-git clone https://github.com/kmc3661/BFQ.git
-cd BFQ
-```
-
-2. Create a Python environment.
+From the repository root:
 
 ```bash
 conda create -n bfq python=3.11
 conda activate bfq
-```
-
-3. Install the dependencies.
-
-```bash
 pip install -r requirements.txt
 bash scripts/setup_thirdparty.sh
 pip install -e 3rdparty/LLaVA-NeXT
@@ -38,139 +18,55 @@ pip install -e 3rdparty/lmms-eval
 pip install -e .
 ```
 
-See [3rdparty/README.md](./3rdparty/README.md) if you prefer to point BFQ to external source trees through environment variables.
+The third-party repositories can also be installed from existing local checkouts; see [3rdparty/README.md](3rdparty/README.md).
 
-## Command-Line Interface
+## Calibration data
 
-### Main quantization entrypoint
+Prepare a COCO-caption calibration file in JSON or JSONL format and its image directory. Use the same `image` / `conversations` fields as the [MBQ calibration data](https://github.com/thu-nics/MBQ#apply-model-quantization-in-qmllm-package). The scripts select one ordered 64-sample manifest (seed 42 by default) and use those exact samples for both quantization-effect analysis and CWE search.
 
-`main_quant.py` performs calibration-time quantization search.
-When used directly, `main_quant.py` performs BFQ calibration with the arguments you provide.
-To reproduce the public BFQ pipeline with automatic quantization-effect analysis and policy generation, use the provided calibration wrappers or pass a pre-built `--glmi_policy_override_path`.
-
-Important arguments:
-
-- `--model`: one of `internvl2`, `llava_onevision`, `qwen2_vl`
-- `--model_args`: model loading arguments such as `pretrained=OpenGVLab/InternVL2-8B`
-- `--calib_data`: `coco` or `pileval`
-- `--data_path`: calibration JSON / JSONL path
-- `--image_folder`: image root for multimodal calibration data
-- `--n_samples`: number of calibration samples used for reconstruction calibration
-- `--method bfq`: enable BFQ
-- `--glmi_policy_n_samples`: number of calibration samples used only for quantization-effect analysis (the public BFQ wrappers default to `64`)
-- `--scale_path`: path used to save the calibrated quantization results
-
-### Main evaluation entrypoint
-
-`main.py` evaluates the pseudo-quantized model on downstream benchmarks.
-Use `--method bfq --pseudo_quant` together with the saved `--scale_path`.
-
-## Run BFQ Calibration
-
-### Recommended: wrapper-based calibration with automatic allocation rule
-
-The public calibration wrappers run calibration-set quantization-effect analysis, infer the allocation rule automatically, build a policy override, and then launch BFQ calibration:
+Set the model and data paths before running the commands below:
 
 ```bash
+export MODEL=internvl2
+export MODEL_ARGS=pretrained=OpenGVLab/InternVL2-8B
+export DATA_PATH=/path/to/calibration.json
+export IMAGE_FOLDER=/path/to/images
+```
+
+Other supported `MODEL` values are `llava_onevision` and `qwen2_vl`; set `MODEL_ARGS` to the matching pretrained checkpoint.
+If `llava_onevision` uses a local snapshot path rather than a Hugging Face model ID, append `,model_name=llava-onevision-qwen2-7b-ov` to `MODEL_ARGS` so that LLaVA loads the Qwen backbone.
+
+## Quantization
+
+The scripts measure quantization effects, infer the allocation rule, construct a per-layer policy, and run CWE calibration. The resulting scale cache is saved under `outputs/bfq/` by default.
+
+```bash
+# Weight-only quantization
 bash scripts/run_bfq_w3a16_calibrate.sh
+
+# Weight-activation quantization
 bash scripts/run_bfq_w4a8_calibrate.sh
 ```
 
-They use environment variables such as `MODEL`, `MODEL_ARGS`, `DATA_PATH`, `IMAGE_FOLDER`, and `SCALE_PATH` for customization. By default, they use `64` samples for both quantization-effect analysis and reconstruction calibration.
+Set `SCALE_PATH` to change the cache location, `N_SAMPLES` to change the shared sample count, or `CALIB_SEED` to change the subset. The scripts save the selected manifest, its source indices and checksums, the effect summary, and the inferred policy in a companion `_auto_rule/` directory. Both W3A16 and W4A8 use `distort=off`; an existing scale cache causes the calibration wrapper to stop rather than silently reuse it.
 
-### Low-level BFQ calibration with a pre-built policy override
+For a precomputed policy, `main_quant.py --method bfq --run_process --bfq_policy_override_path /path/to/policy.json` runs the calibration step directly. See `python main_quant.py --help` for model, data, and bit-width options.
 
-If you already have a policy override JSON, you can call `main_quant.py` directly:
+## Evaluation
 
-```bash
-python -W ignore main_quant.py \
-  --model internvl2 \
-  --model_args pretrained=OpenGVLab/InternVL2-8B \
-  --calib_data coco \
-  --data_path data/path/calibration.json \
-  --image_folder data/path/images \
-  --n_samples 64 \
-  --method bfq \
-  --run_process \
-  --w_bit 3 \
-  --a_bit 16 \
-  --w_group 128 \
-  --glmi_policy_override_path outputs/bfq/policy_override.json \
-  --scale_path outputs/bfq/internvl2_w3a16.pt
-```
-
-## Run Evaluation
-
-### W3A16 evaluation
-
-```bash
-python -W ignore main.py \
-  --model internvl2 \
-  --model_args pretrained=OpenGVLab/InternVL2-8B \
-  --tasks mmmu \
-  --batch_size 1 \
-  --method bfq \
-  --pseudo_quant \
-  --w_bit 3 \
-  --a_bit 16 \
-  --w_group 128 \
-  --log_samples \
-  --log_samples_suffix mmmu \
-  --output_path outputs/eval/internvl2_w3a16 \
-  --scale_path outputs/bfq/internvl2_w3a16.pt
-```
-
-### W4A8 evaluation
-
-```bash
-python -W ignore main.py \
-  --model internvl2 \
-  --model_args pretrained=OpenGVLab/InternVL2-8B \
-  --tasks mmmu \
-  --batch_size 1 \
-  --method bfq \
-  --pseudo_quant \
-  --w_bit 4 \
-  --a_bit 8 \
-  --log_samples \
-  --log_samples_suffix mmmu \
-  --output_path outputs/eval/internvl2_w4a8 \
-  --scale_path outputs/bfq/internvl2_w4a8.pt
-```
-
-Convenience scripts:
+Evaluate a saved cache with the matching precision and model. The wrappers use the paper's `mmmu_val` split by default. The five main-table tasks are `mmmu_val`, `vizwiz_vqa_val`, `scienceqa_img`, `chartqa`, and `ai2d`.
 
 ```bash
 bash scripts/run_bfq_w3a16_eval.sh
 bash scripts/run_bfq_w4a8_eval.sh
 ```
 
-## Optional: Standalone Quantization-Effect Analysis
+For the full main table, set `TASKS=mmmu_val,vizwiz_vqa_val,scienceqa_img,chartqa,ai2d` before running either wrapper. Set `SCALE_PATH` if the cache is not at the wrapper's default path, and `OUTPUT_PATH` to choose the evaluation output directory.
 
-The public calibration wrappers apply the rule automatically, so this step is optional.
-If you want to inspect the calibration-set quantization effects directly, you can run:
+## Implementation and tests
 
-```bash
-python scripts/analyze_calib_quantization_effect.py \
-  --model internvl2 \
-  --model_args pretrained=OpenGVLab/InternVL2-8B \
-  --data_json data/path/calibration.json \
-  --image_root data/path/images \
-  --n_samples 64 \
-  --output_dir outputs/quant_effect/internvl2_w4a8 \
-  --w_bit 4 \
-  --act_a_bit 8
-```
+- The allocation rule is in [`scripts/bfq_auto_rule.py`](scripts/bfq_auto_rule.py).
+- Policy construction and BFQ quantization are in [`qmllm/methods/bfq/`](qmllm/methods/bfq/).
+- To check the rule's reference cases without a GPU, run `python -m unittest discover -s tests -v`.
 
-This script always analyzes the provided calibration data and writes a `summary.csv` together with per-layer details.
-
-## Notes
-
-- The allocation rule is implemented in `scripts/bfq_auto_rule.py` and is used by default by both calibration wrappers. W3A16 and W4A8 use the corresponding normalization constants and formulas; no model-name lookup is used.
-- `GLMI_BUDGET_BONUS_HIGH_PERCENTILE=90` is retained for interface compatibility; the common upper-percentile scale cancels when normalized allocation weights are computed.
-- Run the CPU-only rule regression checks with `python -m unittest discover -s tests -v`.
-
-- BFQ-specific optional knobs currently keep the historical `glmi_*` argument names for backward compatibility.
-- The public BFQ calibration wrappers analyze the provided calibration data with `64` samples by default, build the quantization effect-guided allocation policy automatically, and then run BFQ calibration.
-- If you call `main_quant.py` directly, automatic policy generation is not triggered unless you provide `--glmi_policy_override_path` or manually set the BFQ/GLMI budget arguments.
-
+The implementation builds on [MBQ](https://github.com/thu-nics/MBQ).

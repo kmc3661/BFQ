@@ -1,18 +1,12 @@
 # CUDA
 *.egg-info*
 
-# Local datasets, model artifacts, evaluation output, and cloned dependencies
-/data/
-/outputs/
-/checkpoints/
-/3rdparty/LLaVA-NeXT/
-/3rdparty/lmms-eval/
-*.pt
-*.pth
-*.safetensors
-
 # cache
 /llm-awq/awq_cache/
+/outputs/
+/3rdparty/LLaVA-NeXT/
+/3rdparty/lmms-eval/
+/scale_cache/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
