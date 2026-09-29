@@ -15,8 +15,8 @@ class AutoRuleTests(unittest.TestCase):
             with self.subTest(case=case['id']):
                 result = predict(case['statistics'], case['quant_mode'])
                 actual = [float(result[k]) for k in (
-                    'GLMI_BUDGET_BASE_GRID', 'GLMI_N_GRID_TARGET_MEAN',
-                    'GLMI_BUDGET_BONUS_GAMMA')]
+                    'BFQ_BUDGET_BASE_GRID', 'BFQ_N_GRID_TARGET_MEAN',
+                    'BFQ_BUDGET_BONUS_GAMMA')]
                 self.assertEqual(actual, case['expected'])
 
     def test_zero_effect(self):
@@ -25,8 +25,8 @@ class AutoRuleTests(unittest.TestCase):
                      top10_share_weight=0)
         for mode in ('w3a16', 'w4a8'):
             result = predict(stats, mode)
-            self.assertEqual(result['GLMI_BUDGET_BASE_GRID'], '20')
-            self.assertEqual(result['GLMI_N_GRID_TARGET_MEAN'], '20')
+            self.assertEqual(result['BFQ_BUDGET_BASE_GRID'], '20')
+            self.assertEqual(result['BFQ_N_GRID_TARGET_MEAN'], '20')
 
 
 if __name__ == '__main__':
