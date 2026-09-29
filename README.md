@@ -1,6 +1,6 @@
 # Beyond Reconstruction Loss in Post-Training Quantization: Balanced Fitting for Large Vision-Language Models ([Paper](https://arxiv.org/abs/2609.34765))
 
-BFQ is a post-training quantization method for large vision-language models. It measures the effect of quantizing each layer/component on calibration loss and uses those measurements to allocate the search budget for channel-wise equalization (CWE).
+Balanced Fitting Quantization (BFQ) is a post-training quantization method for large vision-language models. It measures the effect of quantizing each layer/component on calibration loss and uses those measurements to allocate the search budget for channel-wise equalization (CWE).
 
 This repository supports InternVL2, LLaVA-OneVision, and Qwen2-VL under W3A16 and W4A8.
 
