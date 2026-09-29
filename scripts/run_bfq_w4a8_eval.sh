@@ -7,7 +7,7 @@ cd "$REPO_ROOT"
 
 MODEL=${MODEL:-internvl2}
 MODEL_ARGS=${MODEL_ARGS:-pretrained=OpenGVLab/InternVL2-8B}
-TASKS=${TASKS:-mmmu}
+TASKS=${TASKS:-mmmu_val}
 BATCH_SIZE=${BATCH_SIZE:-1}
 SCALE_PATH=${SCALE_PATH:-outputs/bfq/${MODEL}_w4a8.pt}
 OUTPUT_PATH=${OUTPUT_PATH:-outputs/eval/${MODEL}_w4a8}

@@ -56,10 +56,10 @@ def predict(stats, mode):
     result = {
         "rule_name": f"{mode}_coco_v3",
         "g_ref": 20.,
-        "GLMI_BUDGET_BASE_GRID": str(base),
-        "GLMI_N_GRID_TARGET_MEAN": str(mean),
-        "GLMI_BUDGET_BONUS_GAMMA": str(gamma),
-        "GLMI_BUDGET_BONUS_HIGH_PERCENTILE": "90",
+        "BFQ_BUDGET_BASE_GRID": str(base),
+        "BFQ_N_GRID_TARGET_MEAN": str(mean),
+        "BFQ_BUDGET_BONUS_GAMMA": str(gamma),
+        "BFQ_BUDGET_BONUS_HIGH_PERCENTILE": "90",
         "explicit_rule_unrounded": raw,
     }
     for name, value in normalized.items():

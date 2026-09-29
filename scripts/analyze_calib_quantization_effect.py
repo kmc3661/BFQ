@@ -20,7 +20,9 @@ from torch import nn
 def _inject_local_sources(root: Path) -> None:
     candidates = [
         os.environ.get("LLAVA_SRC_PATH"),
+        str(root / "3rdparty" / "LLaVA-NeXT"),
         os.environ.get("LMMS_EVAL_SRC_PATH"),
+        str(root / "3rdparty" / "lmms-eval"),
         str(root),
     ]
     for cand in candidates:
@@ -33,6 +35,7 @@ _inject_local_sources(ROOT)
 
 from lmms_eval.models import get_model  # noqa: E402
 from qmllm.calibration.coco_vl import load_image  # noqa: E402
+from qmllm.methods.bfq.policy import _infer_batch_size, _slice_batch  # noqa: E402
 from qmllm.methods.mbq.quantize.pre_quant import get_blocks, get_named_linears  # noqa: E402
 from qmllm.methods.mbq.quantize.quantizer import get_module_by_name_suffix  # noqa: E402
 from qmllm.models import get_process_model  # noqa: E402
@@ -49,6 +52,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--data_json", required=True, help="Path to the calibration JSON or JSONL file.")
     parser.add_argument("--image_root", required=True, help="Root directory for calibration images.")
     parser.add_argument("--n_samples", type=int, default=64)
+    parser.add_argument("--no_shuffle", action="store_true", help="Read an ordered calibration manifest without resampling")
     parser.add_argument("--micro_batch_size", type=int, default=4)
     parser.add_argument("--w_bit", type=int, default=4)
     parser.add_argument("--act_a_bit", type=int, default=8)
@@ -87,7 +91,7 @@ def _build_process_model(args: argparse.Namespace):
     return lm, process_model
 
 
-def _load_calibration_examples(process_model, data_json: str, image_root: str, n_samples: int, seed: int) -> List[dict]:
+def _load_calibration_examples(process_model, data_json: str, image_root: str, n_samples: int, seed: int, shuffle: bool = True) -> List[dict]:
     if data_json.endswith(".jsonl"):
         dataset = []
         with open(data_json, "r") as f:
@@ -99,13 +103,20 @@ def _load_calibration_examples(process_model, data_json: str, image_root: str, n
     else:
         raise ValueError(f"Unsupported data file: {data_json}")
 
-    rng = torch.Generator().manual_seed(seed)
-    perm = torch.randperm(len(dataset), generator=rng).tolist()
-    shuffled = [dataset[i] for i in perm]
+    if not dataset:
+        raise ValueError(f"Empty calibration data: {data_json}")
+    if shuffle:
+        rng = torch.Generator().manual_seed(seed)
+        perm = torch.randperm(len(dataset), generator=rng).tolist()
+        selected = [dataset[i] for i in perm]
+    else:
+        if n_samples != len(dataset):
+            raise ValueError(f"Ordered BFQ manifest has {len(dataset)} records, expected {n_samples}")
+        selected = dataset
 
     examples = []
     for i in range(n_samples):
-        item = shuffled[i % len(shuffled)]
+        item = selected[i % len(selected)]
         if "image" in item and item["image"]:
             if isinstance(item["image"], list):
                 images = [load_image(os.path.join(image_root, p)) for p in item["image"]]
@@ -236,20 +247,26 @@ def _restore_layer(model, layer_id: int, backup_layer, device: torch.device) -> 
     torch.cuda.empty_cache()
 
 
-def _evaluate_avg_loss(process_model, examples: Sequence[dict], micro_batch_size: int) -> Dict[str, float]:
+def _evaluate_avg_loss(
+    process_model,
+    prompt_inputs: Dict,
+    prompt_kwargs: Dict,
+    micro_batch_size: int,
+) -> Dict[str, float]:
     total_loss = 0.0
     total_targets = 0
     num_batches = 0
     owner_model = process_model.model
 
-    for start in range(0, len(examples), micro_batch_size):
-        batch_examples = examples[start : start + micro_batch_size]
-        collated = process_model.data_collator(batch_examples)
-        prompt_inputs, prompt_kwargs = process_model.generate_input(collated)
-        inputs_embeds = prompt_inputs["inputs_embeds"]
-        labels = prompt_kwargs["labels"]
-        attention_mask = prompt_kwargs.get("attention_mask")
-        vision_mask = prompt_kwargs.get("vision_mask")
+    batch_size = _infer_batch_size(prompt_inputs, prompt_kwargs)
+    for start in range(0, batch_size, micro_batch_size):
+        cur_inputs, cur_kwargs = _slice_batch(
+            prompt_inputs, prompt_kwargs, start, min(start + micro_batch_size, batch_size), batch_size
+        )
+        inputs_embeds = cur_inputs["inputs_embeds"]
+        labels = cur_kwargs["labels"]
+        attention_mask = cur_kwargs.get("attention_mask")
+        vision_mask = cur_kwargs.get("vision_mask")
         _set_runtime_masks(owner_model, vision_mask, attention_mask, ref=inputs_embeds)
 
         outputs = process_model.forward(
@@ -267,7 +284,7 @@ def _evaluate_avg_loss(process_model, examples: Sequence[dict], micro_batch_size
         total_targets += int(valid_targets)
         num_batches += 1
 
-        del collated, prompt_inputs, prompt_kwargs, outputs, inputs_embeds, labels, attention_mask, vision_mask
+        del cur_inputs, cur_kwargs, outputs, inputs_embeds, labels, attention_mask, vision_mask
         gc.collect()
         torch.cuda.empty_cache()
 
@@ -362,11 +379,17 @@ def main() -> None:
         image_root=args.image_root,
         n_samples=args.n_samples,
         seed=args.seed,
+        shuffle=not args.no_shuffle,
     )
 
     layers = get_blocks(process_model.model)
     num_layers = len(layers)
     print(f"[info] model={args.model} n_samples={len(examples)} num_layers={num_layers}")
+
+    # Match the paper protocol: pad the full calibration set once, then slice
+    # that fixed batch for micro-batched forward passes.
+    collated = process_model.data_collator(examples)
+    prompt_inputs, prompt_kwargs = process_model.generate_input(collated)
 
     summary_path = output_dir / "summary.csv"
     details_dir = output_dir / "details"
@@ -380,7 +403,7 @@ def main() -> None:
         raise ValueError("No components selected.")
 
     analysis_start = time.perf_counter()
-    baseline = _evaluate_avg_loss(process_model, examples, args.micro_batch_size)
+    baseline = _evaluate_avg_loss(process_model, prompt_inputs, prompt_kwargs, args.micro_batch_size)
     baseline_json = details_dir / "baseline.json"
     baseline_json.write_text(json.dumps(baseline, indent=2))
     records: List[dict] = []
@@ -433,7 +456,7 @@ def main() -> None:
                             token_scope=component,
                         )
 
-                    result = _evaluate_avg_loss(process_model, examples, args.micro_batch_size)
+                    result = _evaluate_avg_loss(process_model, prompt_inputs, prompt_kwargs, args.micro_batch_size)
                     delta_loss = result["avg_loss"] - baseline["avg_loss"]
                     harmful = max(delta_loss, 0.0)
                     beneficial = max(-delta_loss, 0.0)
@@ -496,7 +519,7 @@ def main() -> None:
         Path(args.timing_json).write_text(json.dumps(timing_payload, indent=2, sort_keys=True))
 
     _plot_analysis(records, output_dir, num_layers, components)
-    del process_model
+    del collated, prompt_inputs, prompt_kwargs, process_model
     gc.collect()
     torch.cuda.empty_cache()
     print(f"[done] summary={summary_path}")
