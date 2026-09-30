@@ -22,7 +22,7 @@ The third-party repositories can also be installed from existing local checkouts
 
 ## Calibration data
 
-Prepare a COCO-caption calibration file in JSON or JSONL format and its image directory. Use the same `image` / `conversations` fields as the [MBQ calibration data](https://github.com/thu-nics/MBQ#apply-model-quantization-in-qmllm-package). The scripts select one ordered 64-sample manifest (seed 42 by default) and use those exact samples for both quantization-effect analysis and CWE search.
+Prepare a COCO-caption calibration file in JSON or JSONL format and its image directory. Use the same `image` / `conversations` fields as the [MBQ calibration data](https://github.com/thu-nics/MBQ#apply-model-quantization-in-qmllm-package). The scripts select one ordered 64-sample manifest and use those exact samples for both quantization-effect analysis and CWE search.
 
 Set the model and data paths before running the commands below:
 
