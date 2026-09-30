@@ -13,7 +13,7 @@ conda create -n bfq python=3.11
 conda activate bfq
 pip install -r requirements.txt
 bash scripts/setup_thirdparty.sh
-pip install -e 3rdparty/LLaVA-NeXT
+pip install -e 3rdparty/LLaVA-NeX
 pip install -e 3rdparty/lmms-eval
 pip install -e .
 ```
