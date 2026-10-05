@@ -70,3 +70,14 @@ For the full main table, set `TASKS=mmmu_val,vizwiz_vqa_val,scienceqa_img,chartq
 - To check the rule's reference cases without a GPU, run `python -m unittest discover -s tests -v`.
 
 The implementation builds on [MBQ](https://github.com/thu-nics/MBQ).
+
+## Citation
+
+```bibtex
+@article{kang2026beyond,
+  title={Beyond Reconstruction Loss in Post-Training Quantization: Balanced Fitting for Large Vision-Language Models},
+  author={Kang, Minchan and Park, Kyeonghye and Sa, Seungyeon and Cho, Seoyoung and Kim, Daeshik and Cho, Yucheol},
+  journal={arXiv preprint arXiv:2609.34765},
+  year={2026}
+}
+```
